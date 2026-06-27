@@ -5,3 +5,12 @@ datasource db {
 generator client {
   provider = "prisma-client-js"
 }
+
+// User — only the fields needed for the current MVP.
+// Keeping the model minimal avoids premature abstraction
+// and makes it easy to evolve as requirements solidify.
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  createdAt DateTime @default(now())
+}
