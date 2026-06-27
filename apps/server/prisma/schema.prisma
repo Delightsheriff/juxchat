@@ -10,9 +10,25 @@ generator client {
 // Keeping the model minimal avoids premature abstraction
 // and makes it easy to evolve as requirements solidify.
 model User {
-  id        String   @id @default(cuid())
-  username  String   @unique
-  createdAt DateTime @default(now())
+  id        String               @id @default(cuid())
+  username  String               @unique
+  createdAt DateTime             @default(now())
+  members   ConversationMember[]
+}
+
+// A join table links users to conversations. Storing participant
+// IDs directly on Conversation would make it hard to query who
+// belongs to what and would limit future features like roles or
+// per-member settings. A dedicated model keeps things flexible.
+model ConversationMember {
+  id             String       @id @default(cuid())
+  conversationId String
+  userId         String
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@unique([conversationId, userId])
 }
 
 // Conversation — no relations yet.
@@ -20,8 +36,9 @@ model User {
 // a premature schema design. The model will be extended with
 // members and messages once those concepts are introduced.
 model Conversation {
-  id            String    @id @default(cuid())
+  id            String               @id @default(cuid())
   lastMessage   String?
   lastMessageAt DateTime?
-  createdAt     DateTime  @default(now())
+  createdAt     DateTime             @default(now())
+  members       ConversationMember[]
 }
