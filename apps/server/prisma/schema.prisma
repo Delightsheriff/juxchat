@@ -14,3 +14,14 @@ model User {
   username  String   @unique
   createdAt DateTime @default(now())
 }
+
+// Conversation — no relations yet.
+// Adding relations before the related models exist would force
+// a premature schema design. The model will be extended with
+// members and messages once those concepts are introduced.
+model Conversation {
+  id            String    @id @default(cuid())
+  lastMessage   String?
+  lastMessageAt DateTime?
+  createdAt     DateTime  @default(now())
+}
