@@ -46,6 +46,12 @@ async function main() {
     create: { conversationId: conv.id, userId: bob.id },
   })
 
+  await prisma.conversationMember.upsert({
+    where: { conversationId_userId: { conversationId: conv.id, userId: charlie.id } },
+    update: {},
+    create: { conversationId: conv.id, userId: charlie.id },
+  })
+
   console.log(`Seeded: alice(${alice.id}), bob(${bob.id}), charlie(${charlie.id}), conversation(${conv.id})`)
 }
 
