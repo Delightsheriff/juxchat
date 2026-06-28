@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
 
 const USERS = ['alice', 'bob', 'charlie']
 const CONVERSATIONS = ['conv_demo']
@@ -32,37 +35,34 @@ export function DevLogin({
         <h1 className="text-xl font-semibold text-center">Chat App</h1>
 
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium">User</label>
-          <select
-            className="rounded-md border px-3 py-2 text-sm"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          >
-            {USERS.map((u) => (
-              <option key={u} value={u}>{u}</option>
-            ))}
-          </select>
+          <Label>User</Label>
+          <Select value={username} onValueChange={(v) => setUsername(v)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {USERS.map((u) => (
+                <SelectItem key={u} value={u}>{u}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium">Conversation</label>
-          <select
-            className="rounded-md border px-3 py-2 text-sm"
-            value={conversationId}
-            onChange={(e) => setConversationId(e.target.value)}
-          >
-            {CONVERSATIONS.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+          <Label>Conversation</Label>
+          <Select value={conversationId} onValueChange={(v) => setConversationId(v)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CONVERSATIONS.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <button
-          type="submit"
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/80"
-        >
-          Continue
-        </button>
+        <Button type="submit">Continue</Button>
       </form>
     </div>
   )

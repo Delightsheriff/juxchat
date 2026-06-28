@@ -1,5 +1,13 @@
 import { Message, MessageContent } from '@/components/ui/message'
 import { Bubble, BubbleContent } from '@/components/ui/bubble'
+import {
+  MessageScrollerProvider,
+  MessageScroller,
+  MessageScrollerViewport,
+  MessageScrollerContent,
+  MessageScrollerItem,
+  MessageScrollerButton,
+} from '@/components/ui/message-scroller'
 
 export interface ChatMessage {
   id: string
@@ -11,8 +19,12 @@ export interface ChatMessage {
 /**
  * Pure presentation component. It receives messages via props and
  * has no knowledge of sockets, state management, or the conversation
- * it belongs to. Keeping it focused on rendering makes it reusable
- * and easy to test.
+ * it belongs to.
+ *
+ * Ownership is determined by comparing each message's senderId to
+ * the current user's database ID (not username). senderId is a
+ * stable primary key that never changes, unlike a display name
+ * which could be edited later.
  */
 export function MessageList({
   messages,
@@ -22,19 +34,30 @@ export function MessageList({
   userId: string
 }) {
   return (
-    <div className="flex flex-col gap-2 p-4 overflow-y-auto">
-      {messages.map((msg) => {
-        const isMine = msg.senderId === userId
-        return (
-          <Message key={msg.id} align={isMine ? 'end' : 'start'}>
-            <MessageContent>
-              <Bubble variant={isMine ? 'default' : 'muted'}>
-                <BubbleContent>{msg.text}</BubbleContent>
-              </Bubble>
-            </MessageContent>
-          </Message>
-        )
-      })}
-    </div>
+    <MessageScrollerProvider>
+      <MessageScroller className="flex-1">
+        <MessageScrollerViewport>
+          <MessageScrollerContent>
+            {messages.map((msg, i) => {
+              const isMine = msg.senderId === userId
+              const isLast = i === messages.length - 1
+
+              return (
+                <MessageScrollerItem key={msg.id} scrollAnchor={isLast}>
+                  <Message align={isMine ? 'end' : 'start'}>
+                    <MessageContent>
+                      <Bubble variant={isMine ? 'default' : 'muted'}>
+                        <BubbleContent>{msg.text}</BubbleContent>
+                      </Bubble>
+                    </MessageContent>
+                  </Message>
+                </MessageScrollerItem>
+              )
+            })}
+          </MessageScrollerContent>
+        </MessageScrollerViewport>
+        <MessageScrollerButton />
+      </MessageScroller>
+    </MessageScrollerProvider>
   )
 }

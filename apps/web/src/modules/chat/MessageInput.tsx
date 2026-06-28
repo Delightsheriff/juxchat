@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 /**
  * Owns only the input text state and exposes a callback when the
@@ -33,8 +34,7 @@ export function MessageInput({
 
   return (
     <form onSubmit={handleSubmit} className="flex gap-2 p-4 border-t">
-      <input
-        className="flex-1 rounded-md border px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      <Input
         placeholder="Type a message..."
         value={text}
         onChange={(e) => setText(e.target.value)}
