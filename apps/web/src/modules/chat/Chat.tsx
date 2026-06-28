@@ -4,13 +4,22 @@ import { Events } from '../../socket/events'
 import { useSocket } from '../../socket/SocketProvider'
 import { MessageList, type ChatMessage } from './MessageList'
 import { MessageInput } from './MessageInput'
+import { ChatHeader } from './ChatHeader'
 
 /**
- * Coordinates the socket interaction for the current conversation.
- * It receives the active user and conversation from the parent and
- * has no knowledge of how they were chosen — the same component
- * works with the development entry screen and will work with a
- * real login screen later.
+ * Hardcoded mapping of seeded conversation members. Exists only
+ * for the temporary DevLogin — real auth will derive participants
+ * from the backend.
+ */
+const CONVERSATION_MEMBERS: Record<string, string[]> = {
+  conv_demo: ['alice', 'bob'],
+}
+
+/**
+ * Orchestrates the chat experience for a single conversation.
+ * Owns socket interaction and message state, then delegates
+ * presentation to child components. This keeps children focused
+ * on rendering and avoids duplicating socket wiring.
  */
 export function Chat({
   username,
@@ -23,6 +32,9 @@ export function Chat({
   const [userId, setUserId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [joined, setJoined] = useState(false)
+
+  const otherParticipant =
+    CONVERSATION_MEMBERS[conversationId]?.find((m) => m !== username) ?? null
 
   useEffect(() => {
     const socket = getSocket()
@@ -95,7 +107,8 @@ export function Chat({
   }
 
   return (
-    <div className="flex flex-col h-svh max-w-2xl mx-auto">
+    <div className="flex flex-col h-svh max-w-2xl mx-auto border-x bg-background">
+      <ChatHeader otherParticipant={otherParticipant} username={username} />
       <MessageList messages={messages} userId={userId!} />
       <MessageInput onSend={handleSend} />
     </div>
