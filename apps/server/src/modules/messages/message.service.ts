@@ -50,3 +50,29 @@ export async function sendMessage(
 
   return message
 }
+
+export async function getMessages(
+  prisma: PrismaClient,
+  conversationId: string,
+  userId: string,
+) {
+  const member = await prisma.conversationMember.findUnique({
+    where: {
+      conversationId_userId: {
+        conversationId,
+        userId,
+      },
+    },
+  })
+
+  if (!member) {
+    throw new Error('not a member of this conversation')
+  }
+
+  const messages = await prisma.message.findMany({
+    where: { conversationId },
+    orderBy: { createdAt: 'asc' },
+  })
+
+  return messages
+}
