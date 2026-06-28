@@ -1,6 +1,5 @@
 import Fastify from 'fastify'
 import { healthRoute } from './modules/health/health.route.js'
-import { messagesRoute } from './modules/messages/messages.route.js'
 import prismaPlugin from './plugins/prisma.js'
 import socketPlugin from './plugins/socket.js'
 
@@ -19,7 +18,6 @@ export function buildApp() {
   app.register(prismaPlugin)
   app.register(socketPlugin)
   app.register(healthRoute)
-  app.register(messagesRoute)
 
   return app
 }
