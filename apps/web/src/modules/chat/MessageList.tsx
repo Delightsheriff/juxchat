@@ -51,7 +51,7 @@ export function MessageList({
     <MessageScrollerProvider>
       <MessageScroller className="flex-1">
         <MessageScrollerViewport>
-          <MessageScrollerContent>
+          <MessageScrollerContent className="gap-1 px-4 py-3">
             {messages.map((msg, i) => {
               const isMine = msg.senderId === userId
               const isLast = i === messages.length - 1
