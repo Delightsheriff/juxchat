@@ -1,13 +1,21 @@
 import type { Socket } from 'socket.io'
 import type { FastifyLoggerInstance } from 'fastify'
+import { socketUserMap, userSocketMap } from '../store.js'
 
 /**
- * Handles client disconnections. Kept separate from connection
- * logic so each lifecycle stage has a single responsibility and
- * can be evolved independently (e.g. adding cleanup or metrics).
+ * Handles client disconnections. Cleans up the in-memory
+ * registration so stale entries don't accumulate. Kept separate
+ * from connection logic so each lifecycle stage has a single
+ * responsibility and can be evolved independently.
  */
 export function onDisconnect(socket: Socket, log: FastifyLoggerInstance) {
   const duration = Date.now() - (socket.data.connectedAt ?? Date.now())
+
+  const userId = socketUserMap.get(socket.id)
+  if (userId) {
+    socketUserMap.delete(socket.id)
+    userSocketMap.delete(userId)
+  }
 
   log.info({ socketId: socket.id, durationMs: duration }, 'client disconnected')
 }
