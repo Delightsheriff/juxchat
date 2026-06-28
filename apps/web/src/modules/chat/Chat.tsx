@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { getSocket } from '../../socket/socket'
+import { useCallback, useEffect, useState } from 'react'
+import { getSocket, BACKEND_URL } from '../../socket/socket'
 import { Events } from '../../socket/events'
 import { useSocket } from '../../socket/SocketProvider'
 import { MessageList, type ChatMessage } from './MessageList'
@@ -14,19 +14,16 @@ const CONVERSATION_ID = 'conv_demo'
  * over the wire for a single conversation — there is no need for
  * global state or a store at this stage.
  *
- * Rendering happens exclusively from the server's `new_message`
- * broadcast. The sender never inserts a message locally; it waits
- * for the server to echo it back through the room. This guarantees
- * that every displayed message was persisted first.
+ * History is loaded over HTTP because it is a one-time request–
+ * response operation. Live messages arrive over Socket.IO because
+ * they are push events. Both sources write into the same local
+ * messages array so the UI treats them identically.
  */
 export function Chat() {
   const { connected } = useSocket()
   const [userId, setUserId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [joined, setJoined] = useState(false)
-  const messagesRef = useRef<ChatMessage[]>([])
-
-  messagesRef.current = messages
 
   useEffect(() => {
     const socket = getSocket()
@@ -36,7 +33,7 @@ export function Chat() {
       socket.emit(Events.JoinConversation, CONVERSATION_ID)
     })
 
-    socket.on(Events.JoinedConversation, () => {
+    socket.on(Events.JoinedConversation, async () => {
       setJoined(true)
     })
 
@@ -55,6 +52,7 @@ export function Chat() {
     socket.on('disconnect', () => {
       setUserId(null)
       setJoined(false)
+      setMessages([])
     })
 
     return () => {
@@ -72,6 +70,28 @@ export function Chat() {
       getSocket().emit(Events.Register, USERNAME)
     }
   }, [connected, userId])
+
+  useEffect(() => {
+    if (!joined || !userId) return
+
+    async function loadHistory() {
+      try {
+        const res = await fetch(
+          `${BACKEND_URL}/conversations/${CONVERSATION_ID}/messages?userId=${userId}`,
+        )
+        if (!res.ok) {
+          console.error('failed to load history', res.status)
+          return
+        }
+        const history: ChatMessage[] = await res.json()
+        setMessages(history)
+      } catch (err) {
+        console.error('failed to load history', err)
+      }
+    }
+
+    loadHistory()
+  }, [joined, userId])
 
   const handleSend = useCallback(async (text: string) => {
     return new Promise<void>((resolve, reject) => {
