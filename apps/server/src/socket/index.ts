@@ -10,5 +10,5 @@ import { onConnection } from './handlers/connection.js'
  * can evolve independently without touching shared wiring.
  */
 export function registerSocketHandlers(io: Server, log: FastifyBaseLogger, prisma: PrismaClient) {
-  io.on('connection', (socket) => onConnection(socket, log, prisma))
+  io.on('connection', (socket) => onConnection(socket, log, prisma, io))
 }
