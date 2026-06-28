@@ -23,7 +23,7 @@ export function onConnection(
 
   log.info({ socketId: socket.id }, 'client connected')
 
-  socket.on('register', (userId: string) => onRegister(socket, log, userId))
+  socket.on('register', (username: string) => onRegister(socket, log, prisma, username))
 
   socket.on('join_conversation', (conversationId: string) => {
     onJoinConversation(socket, log, prisma, conversationId)

@@ -1,24 +1,31 @@
 import type { Socket } from 'socket.io'
 import type { FastifyBaseLogger } from 'fastify'
+import type { PrismaClient } from '@prisma/client'
 import { socketUserMap, userSocketMap } from '../store.js'
 
-/**
- * Temporary client registration. Once authentication is introduced,
- * this event will be replaced by a middleware that extracts the
- * userId from a JWT or session token at connection time.
- */
-export function onRegister(socket: Socket, log: FastifyBaseLogger, userId: string) {
-  if (!userId || typeof userId !== 'string' || userId.trim().length === 0) {
-    socket.emit('register_error', { message: 'userId is required' })
+export async function onRegister(
+  socket: Socket,
+  log: FastifyBaseLogger,
+  prisma: PrismaClient,
+  username: string,
+) {
+  if (!username || typeof username !== 'string' || username.trim().length === 0) {
+    socket.emit('register_error', { message: 'username is required' })
     return
   }
 
-  const trimmed = userId.trim()
+  const trimmed = username.trim()
 
-  socketUserMap.set(socket.id, trimmed)
-  userSocketMap.set(trimmed, socket.id)
+  const user = await prisma.user.findUnique({ where: { username: trimmed } })
+  if (!user) {
+    socket.emit('register_error', { message: 'user not found' })
+    return
+  }
 
-  log.info({ socketId: socket.id, userId: trimmed }, 'socket registered as user')
+  socketUserMap.set(socket.id, user.id)
+  userSocketMap.set(user.id, socket.id)
 
-  socket.emit('registered', { userId: trimmed })
+  log.info({ socketId: socket.id, userId: user.id, username: trimmed }, 'socket registered as user')
+
+  socket.emit('registered', { userId: user.id, username: trimmed })
 }
