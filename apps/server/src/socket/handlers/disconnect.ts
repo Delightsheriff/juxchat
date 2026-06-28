@@ -14,7 +14,14 @@ export function onDisconnect(socket: Socket, log: FastifyBaseLogger) {
   const userId = socketUserMap.get(socket.id)
   if (userId) {
     socketUserMap.delete(socket.id)
-    userSocketMap.delete(userId)
+
+    const sockets = userSocketMap.get(userId)
+    if (sockets) {
+      sockets.delete(socket.id)
+      if (sockets.size === 0) {
+        userSocketMap.delete(userId)
+      }
+    }
   }
 
   log.info({ socketId: socket.id, durationMs: duration }, 'client disconnected')

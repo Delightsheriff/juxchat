@@ -23,7 +23,11 @@ export async function onRegister(
   }
 
   socketUserMap.set(socket.id, user.id)
-  userSocketMap.set(user.id, socket.id)
+
+  if (!userSocketMap.has(user.id)) {
+    userSocketMap.set(user.id, new Set())
+  }
+  userSocketMap.get(user.id)!.add(socket.id)
 
   log.info({ socketId: socket.id, userId: user.id, username: trimmed }, 'socket registered as user')
 

@@ -8,4 +8,4 @@
  * session store.
  */
 export const socketUserMap = new Map<string, string>()
-export const userSocketMap = new Map<string, string>()
+export const userSocketMap = new Map<string, Set<string>>()
