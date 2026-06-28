@@ -23,3 +23,15 @@ Modules are organised by feature (`modules/health/`, `modules/messages/`) rather
 ## Business logic separated from transport
 
 Socket handlers validate the incoming event and delegate to a service module (`message.service.ts`). The service has no knowledge of Socket.IO, HTTP, or any transport — it receives plain values and returns plain values. This separation means the same business logic can be reused (for example, exposing the same operation over HTTP later), and it can be unit-tested without starting a server or creating fake socket objects.
+
+## HTTP for history, Socket.IO for realtime
+
+Message history is fetched over HTTP (`GET /conversations/:id/messages`) rather than through a socket event. HTTP is a better fit for bulk, one-shot data: it has built-in caching semantics, works with standard browser devtools, and does not require the client to be registered before loading history. Socket.IO is kept for what it does best — low-latency bidirectional communication for realtime events like `new_message`. Splitting the concerns avoids forcing every new client to wait for a socket connection to complete before seeing their chat history.
+
+## Multi-socket user mapping
+
+A single user can have multiple browser tabs open simultaneously. Each tab creates its own WebSocket connection, and each connection registers a separate socket ID. The server maintains a `Map<userId, Set<socketId>>` so that all of a user's active sockets are tracked. Registering a new tab adds to the set; closing a tab removes just that socket. The user entry is deleted only when the last socket disconnects. This prevents one tab from unregistering another and ensures broadcast events reach all open instances.
+
+## Development seed
+
+The database seed creates three users (alice, bob, charlie) and a single conversation (`conv_demo`) that all three belong to. Seed data exists so that developers can open multiple browser tabs, pick different users, and immediately test sending and receiving messages without manually creating accounts or conversation memberships. The seed is idempotent — running it multiple times does not create duplicates.

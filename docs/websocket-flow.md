@@ -15,6 +15,10 @@ Client                  Server
   │                       │  Add socket to Socket.IO room "conv_demo"
   │◄── joined_conv ───────┤
   │                       │
+  ├── GET /conversations/ ┤  HTTP — fetch message history
+  │     demo/messages     │  Ordered by createdAt ASC
+  │◄── [ ...messages ] ───┤
+  │                       │
   ├── send_message ──────►│  Validate payload
   │                       │  Resolve sender from socketId map
   │                       │  Verify membership in Prisma
