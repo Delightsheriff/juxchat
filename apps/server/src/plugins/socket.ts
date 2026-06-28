@@ -29,7 +29,7 @@ export default fp(async function socketPlugin(app: FastifyInstance) {
 
     app.decorate('io', io)
 
-    registerSocketHandlers(io, app.log)
+    registerSocketHandlers(io, app.log, app.prisma)
   })
 
   app.addHook('preClose', async function () {

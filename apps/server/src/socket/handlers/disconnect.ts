@@ -1,5 +1,5 @@
 import type { Socket } from 'socket.io'
-import type { FastifyLoggerInstance } from 'fastify'
+import type { FastifyBaseLogger } from 'fastify'
 import { socketUserMap, userSocketMap } from '../store.js'
 
 /**
@@ -8,7 +8,7 @@ import { socketUserMap, userSocketMap } from '../store.js'
  * from connection logic so each lifecycle stage has a single
  * responsibility and can be evolved independently.
  */
-export function onDisconnect(socket: Socket, log: FastifyLoggerInstance) {
+export function onDisconnect(socket: Socket, log: FastifyBaseLogger) {
   const duration = Date.now() - (socket.data.connectedAt ?? Date.now())
 
   const userId = socketUserMap.get(socket.id)

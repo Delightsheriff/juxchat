@@ -1,5 +1,5 @@
 import type { Socket } from 'socket.io'
-import type { FastifyLoggerInstance } from 'fastify'
+import type { FastifyBaseLogger } from 'fastify'
 import { socketUserMap, userSocketMap } from '../store.js'
 
 /**
@@ -7,7 +7,7 @@ import { socketUserMap, userSocketMap } from '../store.js'
  * this event will be replaced by a middleware that extracts the
  * userId from a JWT or session token at connection time.
  */
-export function onRegister(socket: Socket, log: FastifyLoggerInstance, userId: string) {
+export function onRegister(socket: Socket, log: FastifyBaseLogger, userId: string) {
   if (!userId || typeof userId !== 'string' || userId.trim().length === 0) {
     socket.emit('register_error', { message: 'userId is required' })
     return

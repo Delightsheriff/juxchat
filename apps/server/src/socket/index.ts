@@ -1,5 +1,6 @@
 import type { Server } from 'socket.io'
-import type { FastifyLoggerInstance } from 'fastify'
+import type { FastifyBaseLogger } from 'fastify'
+import type { PrismaClient } from '@prisma/client'
 import { onConnection } from './handlers/connection.js'
 
 /**
@@ -8,6 +9,6 @@ import { onConnection } from './handlers/connection.js'
  * connection lifecycle, room management, and message handling
  * can evolve independently without touching shared wiring.
  */
-export function registerSocketHandlers(io: Server, log: FastifyLoggerInstance) {
-  io.on('connection', (socket) => onConnection(socket, log))
+export function registerSocketHandlers(io: Server, log: FastifyBaseLogger, prisma: PrismaClient) {
+  io.on('connection', (socket) => onConnection(socket, log, prisma))
 }
