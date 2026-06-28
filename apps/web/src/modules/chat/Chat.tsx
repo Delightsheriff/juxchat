@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { getSocket } from '../../socket/socket'
+import { getSocket, BACKEND_URL } from '../../socket/socket'
 import { Events } from '../../socket/events'
 import { useSocket } from '../../socket/SocketProvider'
 import { MessageList, type ChatMessage } from './MessageList'
@@ -12,7 +12,7 @@ import { ChatHeader } from './ChatHeader'
  * from the backend.
  */
 const CONVERSATION_MEMBERS: Record<string, string[]> = {
-  conv_demo: ['alice', 'bob'],
+  conv_demo: ['alice', 'bob', 'charlie'],
 }
 
 /**
@@ -63,7 +63,6 @@ export function Chat({
     socket.on('disconnect', () => {
       setUserId(null)
       setJoined(false)
-      setMessages([])
     })
 
     return () => {
@@ -81,6 +80,23 @@ export function Chat({
       getSocket().emit(Events.Register, username)
     }
   }, [connected, userId, username])
+
+  useEffect(() => {
+    if (!joined || !userId) return
+
+    const url = `${BACKEND_URL}/conversations/${conversationId}/messages?userId=${userId}`
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) throw new Error('failed to fetch messages')
+        return res.json()
+      })
+      .then((data: ChatMessage[]) => {
+        setMessages(data)
+      })
+      .catch((err) => {
+        console.error('history fetch failed', err)
+      })
+  }, [joined, userId, conversationId])
 
   const handleSend = useCallback(async (text: string) => {
     return new Promise<void>((resolve, reject) => {
