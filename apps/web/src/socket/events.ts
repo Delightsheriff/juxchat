@@ -10,4 +10,6 @@ export const Events = {
   RegisterError: 'register_error',
   JoinedConversation: 'joined_conversation',
   JoinConversationError: 'join_conversation_error',
+  SendMessage: 'send_message',
+  NewMessage: 'new_message',
 } as const
