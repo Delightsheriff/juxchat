@@ -1,39 +1,35 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { getSocket } from '../../socket/socket'
 import { Events } from '../../socket/events'
 import { useSocket } from '../../socket/SocketProvider'
 import { MessageList, type ChatMessage } from './MessageList'
 import { MessageInput } from './MessageInput'
 
-const USERNAME = 'alice'
-const CONVERSATION_ID = 'conv_demo'
-
 /**
  * Coordinates the socket interaction for the current conversation.
- * Message state is local because it only represents what has arrived
- * over the wire for a single conversation — there is no need for
- * global state or a store at this stage.
- *
- * Rendering happens exclusively from the server's `new_message`
- * broadcast. The sender never inserts a message locally; it waits
- * for the server to echo it back through the room. This guarantees
- * that every displayed message was persisted first.
+ * It receives the active user and conversation from the parent and
+ * has no knowledge of how they were chosen — the same component
+ * works with the development entry screen and will work with a
+ * real login screen later.
  */
-export function Chat() {
+export function Chat({
+  username,
+  conversationId,
+}: {
+  username: string
+  conversationId: string
+}) {
   const { connected } = useSocket()
   const [userId, setUserId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [joined, setJoined] = useState(false)
-  const messagesRef = useRef<ChatMessage[]>([])
-
-  messagesRef.current = messages
 
   useEffect(() => {
     const socket = getSocket()
 
     socket.on(Events.Registered, (data: { userId: string }) => {
       setUserId(data.userId)
-      socket.emit(Events.JoinConversation, CONVERSATION_ID)
+      socket.emit(Events.JoinConversation, conversationId)
     })
 
     socket.on(Events.JoinedConversation, () => {
@@ -55,6 +51,7 @@ export function Chat() {
     socket.on('disconnect', () => {
       setUserId(null)
       setJoined(false)
+      setMessages([])
     })
 
     return () => {
@@ -65,19 +62,19 @@ export function Chat() {
       socket.off(Events.JoinConversationError)
       socket.off('disconnect')
     }
-  }, [])
+  }, [conversationId])
 
   useEffect(() => {
     if (connected && !userId) {
-      getSocket().emit(Events.Register, USERNAME)
+      getSocket().emit(Events.Register, username)
     }
-  }, [connected, userId])
+  }, [connected, userId, username])
 
   const handleSend = useCallback(async (text: string) => {
     return new Promise<void>((resolve, reject) => {
       getSocket().emit(
         Events.SendMessage,
-        { conversationId: CONVERSATION_ID, text },
+        { conversationId, text },
         (response: { success: boolean; message: ChatMessage; error?: string }) => {
           if (response.success) {
             resolve()
@@ -87,7 +84,7 @@ export function Chat() {
         },
       )
     })
-  }, [])
+  }, [conversationId])
 
   if (!connected) {
     return <div className="flex items-center justify-center h-svh text-muted-foreground">Connecting...</div>

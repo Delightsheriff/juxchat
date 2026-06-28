@@ -20,6 +20,12 @@ async function main() {
     create: { username: 'bob' },
   })
 
+  const charlie = await prisma.user.upsert({
+    where: { username: 'charlie' },
+    update: {},
+    create: { username: 'charlie' },
+  })
+
   const convId = 'conv_demo'
 
   const conv = await prisma.conversation.upsert({
@@ -40,7 +46,7 @@ async function main() {
     create: { conversationId: conv.id, userId: bob.id },
   })
 
-  console.log(`Seeded: alice(${alice.id}), bob(${bob.id}), conversation(${conv.id})`)
+  console.log(`Seeded: alice(${alice.id}), bob(${bob.id}), charlie(${charlie.id}), conversation(${conv.id})`)
 }
 
 main()
