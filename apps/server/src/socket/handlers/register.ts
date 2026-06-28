@@ -16,20 +16,25 @@ export async function onRegister(
 
   const trimmed = username.trim()
 
-  const user = await prisma.user.findUnique({ where: { username: trimmed } })
-  if (!user) {
-    socket.emit('register_error', { message: 'user not found' })
-    return
+  try {
+    const user = await prisma.user.findUnique({ where: { username: trimmed } })
+    if (!user) {
+      socket.emit('register_error', { message: 'user not found' })
+      return
+    }
+
+    socketUserMap.set(socket.id, user.id)
+
+    if (!userSocketMap.has(user.id)) {
+      userSocketMap.set(user.id, new Set())
+    }
+    userSocketMap.get(user.id)!.add(socket.id)
+
+    log.info({ socketId: socket.id, userId: user.id, username: trimmed }, 'socket registered as user')
+
+    socket.emit('registered', { userId: user.id, username: trimmed })
+  } catch (err) {
+    log.error({ err, username: trimmed }, 'register failed')
+    socket.emit('register_error', { message: 'failed to register' })
   }
-
-  socketUserMap.set(socket.id, user.id)
-
-  if (!userSocketMap.has(user.id)) {
-    userSocketMap.set(user.id, new Set())
-  }
-  userSocketMap.get(user.id)!.add(socket.id)
-
-  log.info({ socketId: socket.id, userId: user.id, username: trimmed }, 'socket registered as user')
-
-  socket.emit('registered', { userId: user.id, username: trimmed })
 }

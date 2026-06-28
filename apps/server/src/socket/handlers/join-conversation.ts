@@ -29,23 +29,28 @@ export async function onJoinConversation(
     return
   }
 
-  const member = await prisma.conversationMember.findUnique({
-    where: {
-      conversationId_userId: {
-        conversationId,
-        userId,
+  try {
+    const member = await prisma.conversationMember.findUnique({
+      where: {
+        conversationId_userId: {
+          conversationId,
+          userId,
+        },
       },
-    },
-  })
+    })
 
-  if (!member) {
-    socket.emit('join_conversation_error', { message: 'not a member of this conversation' })
-    return
+    if (!member) {
+      socket.emit('join_conversation_error', { message: 'not a member of this conversation' })
+      return
+    }
+
+    socket.join(conversationId)
+
+    log.info({ socketId: socket.id, userId, conversationId }, 'socket joined conversation room')
+
+    socket.emit('joined_conversation', { conversationId })
+  } catch (err) {
+    log.error({ err, conversationId }, 'join_conversation failed')
+    socket.emit('join_conversation_error', { message: 'failed to join conversation' })
   }
-
-  socket.join(conversationId)
-
-  log.info({ socketId: socket.id, userId, conversationId }, 'socket joined conversation room')
-
-  socket.emit('joined_conversation', { conversationId })
 }
