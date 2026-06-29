@@ -50,7 +50,7 @@ export function MessageList({
     <MessageScrollerProvider>
       <MessageScroller className="flex-1">
         <MessageScrollerViewport>
-          <MessageScrollerContent className="px-4 py-3">
+          <MessageScrollerContent className="gap-0 px-4 py-3">
             {renderItems.map((item) => {
               if (item.type === 'separator') {
                 return <DateSeparator key={item.key} label={item.label} />
