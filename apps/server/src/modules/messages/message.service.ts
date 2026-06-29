@@ -35,6 +35,7 @@ export async function sendMessage(
         senderId,
         text,
       },
+      include: { sender: { select: { username: true } } },
     })
 
     await tx.conversation.update({
@@ -45,7 +46,8 @@ export async function sendMessage(
       },
     })
 
-    return msg
+    const { sender, ...rest } = msg
+    return { ...rest, senderUsername: sender?.username ?? 'Unknown user' }
   })
 
   return message
@@ -55,6 +57,7 @@ export async function getMessages(
   prisma: PrismaClient,
   conversationId: string,
   userId: string,
+  options?: { cursor?: string; limit?: number },
 ) {
   const member = await prisma.conversationMember.findUnique({
     where: {
@@ -69,10 +72,26 @@ export async function getMessages(
     throw new Error('not a member of this conversation')
   }
 
-  const messages = await prisma.message.findMany({
+  const limit = options?.limit ?? 30
+
+  const raw = await prisma.message.findMany({
     where: { conversationId },
-    orderBy: { createdAt: 'asc' },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    ...(options?.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
+    take: limit + 1,
+    include: { sender: { select: { username: true } } },
   })
 
-  return messages
+  const hasMore = raw.length > limit
+  const page = hasMore ? raw.slice(0, limit) : raw
+  page.reverse()
+
+  const messages = page.map(({ sender, ...rest }) => ({
+    ...rest,
+    senderUsername: sender?.username ?? 'Unknown user',
+  }))
+
+  const nextCursor = hasMore ? (messages[0]?.id ?? null) : null
+
+  return { messages, nextCursor, hasMore }
 }

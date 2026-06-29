@@ -39,39 +39,49 @@ export function Chat({
   useEffect(() => {
     const socket = getSocket()
 
-    socket.on(Events.Registered, (data: { userId: string }) => {
+    function onRegistered(data: { userId: string }) {
       setUserId(data.userId)
       socket.emit(Events.JoinConversation, conversationId)
-    })
+    }
 
-    socket.on(Events.JoinedConversation, () => {
+    function onJoinedConversation() {
       setJoined(true)
-    })
+    }
 
-    socket.on(Events.NewMessage, (msg: ChatMessage) => {
-      setMessages((prev) => [...prev, msg])
-    })
+    function onNewMessage(msg: ChatMessage) {
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === msg.id)) return prev
+        return [...prev, msg]
+      })
+    }
 
-    socket.on(Events.RegisterError, (data: { message: string }) => {
+    function onRegisterError(data: { message: string }) {
       console.error('register error', data.message)
-    })
+    }
 
-    socket.on(Events.JoinConversationError, (data: { message: string }) => {
+    function onJoinConversationError(data: { message: string }) {
       console.error('join error', data.message)
-    })
+    }
 
-    socket.on('disconnect', () => {
+    function onDisconnect() {
       setUserId(null)
       setJoined(false)
-    })
+    }
+
+    socket.on(Events.Registered, onRegistered)
+    socket.on(Events.JoinedConversation, onJoinedConversation)
+    socket.on(Events.NewMessage, onNewMessage)
+    socket.on(Events.RegisterError, onRegisterError)
+    socket.on(Events.JoinConversationError, onJoinConversationError)
+    socket.on('disconnect', onDisconnect)
 
     return () => {
-      socket.off(Events.Registered)
-      socket.off(Events.JoinedConversation)
-      socket.off(Events.NewMessage)
-      socket.off(Events.RegisterError)
-      socket.off(Events.JoinConversationError)
-      socket.off('disconnect')
+      socket.off(Events.Registered, onRegistered)
+      socket.off(Events.JoinedConversation, onJoinedConversation)
+      socket.off(Events.NewMessage, onNewMessage)
+      socket.off(Events.RegisterError, onRegisterError)
+      socket.off(Events.JoinConversationError, onJoinConversationError)
+      socket.off('disconnect', onDisconnect)
     }
   }, [conversationId])
 
@@ -91,7 +101,14 @@ export function Chat({
         return res.json()
       })
       .then((data: ChatMessage[]) => {
-        setMessages(data)
+        setMessages((prev) => {
+          const existingIds = new Set(prev.map((m) => m.id))
+          const toAdd = data.filter((m) => !existingIds.has(m.id))
+          if (toAdd.length === 0) return prev
+          return [...prev, ...toAdd].sort(
+            (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+          )
+        })
       })
       .catch((err) => {
         console.error('history fetch failed', err)

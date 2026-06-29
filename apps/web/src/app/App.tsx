@@ -16,7 +16,11 @@ function App() {
 
   return (
     <SocketProvider>
-      <Chat username={session.username} conversationId={session.conversationId} />
+      <Chat
+        key={`${session.username}-${session.conversationId}`}
+        username={session.username}
+        conversationId={session.conversationId}
+      />
     </SocketProvider>
   )
 }

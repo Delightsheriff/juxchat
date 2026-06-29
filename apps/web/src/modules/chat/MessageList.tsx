@@ -1,5 +1,11 @@
 import { useMemo } from 'react'
-import { Message, MessageContent, MessageFooter } from '@/components/ui/message'
+import {
+  Message,
+  MessageContent,
+  MessageFooter,
+  MessageAvatar,
+  MessageHeader,
+} from '@/components/ui/message'
 import { Bubble, BubbleContent } from '@/components/ui/bubble'
 import {
   MessageScrollerProvider,
@@ -18,6 +24,7 @@ export interface ChatMessage {
   senderId: string
   text: string
   createdAt: string
+  senderUsername: string
 }
 
 const roundedByPosition: Record<MessagePosition, string> = {
@@ -35,6 +42,10 @@ function DateSeparator({ label }: { label: string }) {
       </span>
     </div>
   )
+}
+
+function AvatarLetter({ username }: { username: string }) {
+  return <span className="text-xs font-medium">{username.charAt(0).toUpperCase()}</span>
 }
 
 export function MessageList({
@@ -68,7 +79,17 @@ export function MessageList({
                   className={cn(isStartOfGroup && 'mt-4')}
                 >
                   <Message align={isMine ? 'end' : 'start'}>
+                    {isStartOfGroup && !isMine && (
+                      <MessageAvatar>
+                        <AvatarLetter username={msg.senderUsername} />
+                      </MessageAvatar>
+                    )}
                     <MessageContent>
+                      {isStartOfGroup && (
+                        <MessageHeader>
+                          {msg.senderUsername}
+                        </MessageHeader>
+                      )}
                       <Bubble variant={isMine ? 'default' : 'muted'}>
                         <BubbleContent className={rounded}>
                           {msg.text}
@@ -76,6 +97,11 @@ export function MessageList({
                       </Bubble>
                       <MessageFooter>{formatTime(msg.createdAt)}</MessageFooter>
                     </MessageContent>
+                    {isStartOfGroup && isMine && (
+                      <MessageAvatar>
+                        <AvatarLetter username={msg.senderUsername} />
+                      </MessageAvatar>
+                    )}
                   </Message>
                 </MessageScrollerItem>
               )
