@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { getSocket, BACKEND_URL } from '../../socket/socket'
 import { Events } from '../../socket/events'
 import { useSocket } from '../../socket/SocketProvider'
@@ -6,21 +6,18 @@ import { MessageList, type ChatMessage } from './MessageList'
 import { MessageInput } from './MessageInput'
 import { ChatHeader } from './ChatHeader'
 
-/**
- * Hardcoded mapping of seeded conversation members. Exists only
- * for the temporary DevLogin — real auth will derive participants
- * from the backend.
- */
+const PAGE_SIZE = 30
+
 const CONVERSATION_MEMBERS: Record<string, string[]> = {
   conv_demo: ['alice', 'bob', 'charlie'],
 }
 
-/**
- * Orchestrates the chat experience for a single conversation.
- * Owns socket interaction and message state, then delegates
- * presentation to child components. This keeps children focused
- * on rendering and avoids duplicating socket wiring.
- */
+interface PaginatedResponse {
+  messages: ChatMessage[]
+  nextCursor: string | null
+  hasMore: boolean
+}
+
 export function Chat({
   username,
   conversationId,
@@ -32,6 +29,10 @@ export function Chat({
   const [userId, setUserId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [joined, setJoined] = useState(false)
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(false)
+  const [loadingHistory, setLoadingHistory] = useState(false)
+  const loadingRef = useRef(false)
 
   const otherParticipant =
     CONVERSATION_MEMBERS[conversationId]?.find((m) => m !== username) ?? null
@@ -94,26 +95,56 @@ export function Chat({
   useEffect(() => {
     if (!joined || !userId) return
 
-    const url = `${BACKEND_URL}/conversations/${conversationId}/messages?userId=${userId}`
+    const url = `${BACKEND_URL}/conversations/${conversationId}/messages?userId=${userId}&limit=${PAGE_SIZE}`
     fetch(url)
       .then((res) => {
         if (!res.ok) throw new Error('failed to fetch messages')
-        return res.json()
+        return res.json() as Promise<PaginatedResponse>
       })
-      .then((data: ChatMessage[]) => {
+      .then((data) => {
         setMessages((prev) => {
           const existingIds = new Set(prev.map((m) => m.id))
-          const toAdd = data.filter((m) => !existingIds.has(m.id))
+          const toAdd = data.messages.filter((m) => !existingIds.has(m.id))
           if (toAdd.length === 0) return prev
           return [...prev, ...toAdd].sort(
             (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
           )
         })
+        setNextCursor(data.nextCursor)
+        setHasMore(data.hasMore)
       })
       .catch((err) => {
         console.error('history fetch failed', err)
       })
   }, [joined, userId, conversationId])
+
+  const handleLoadMore = useCallback(async () => {
+    if (!hasMore || loadingRef.current || !userId || !nextCursor) return
+
+    loadingRef.current = true
+    setLoadingHistory(true)
+
+    try {
+      const url = `${BACKEND_URL}/conversations/${conversationId}/messages?userId=${userId}&cursor=${nextCursor}&limit=${PAGE_SIZE}`
+      const res = await fetch(url)
+      if (!res.ok) throw new Error('failed to load more messages')
+      const data: PaginatedResponse = await res.json()
+
+      setMessages((prev) => {
+        const existingIds = new Set(prev.map((m) => m.id))
+        const toAdd = data.messages.filter((m) => !existingIds.has(m.id))
+        if (toAdd.length === 0) return prev
+        return [...toAdd, ...prev]
+      })
+      setNextCursor(data.nextCursor)
+      setHasMore(data.hasMore)
+    } catch (err) {
+      console.error('load more failed', err)
+    } finally {
+      loadingRef.current = false
+      setLoadingHistory(false)
+    }
+  }, [hasMore, userId, nextCursor, conversationId])
 
   const handleSend = useCallback(async (text: string) => {
     return new Promise<void>((resolve, reject) => {
@@ -142,7 +173,13 @@ export function Chat({
   return (
     <div className="flex flex-col h-svh max-w-2xl mx-auto border-x bg-background">
       <ChatHeader otherParticipant={otherParticipant} username={username} />
-      <MessageList messages={messages} userId={userId!} />
+      <MessageList
+        messages={messages}
+        userId={userId!}
+        onLoadMore={handleLoadMore}
+        hasMore={hasMore}
+        loadingHistory={loadingHistory}
+      />
       <MessageInput onSend={handleSend} />
     </div>
   )

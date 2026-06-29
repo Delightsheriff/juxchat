@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useRef, useCallback, useEffect } from 'react'
 import {
   Message,
   MessageContent,
@@ -48,20 +48,59 @@ function AvatarLetter({ username }: { username: string }) {
   return <span className="text-xs font-medium">{username.charAt(0).toUpperCase()}</span>
 }
 
+function Loader() {
+  return (
+    <div className="flex justify-center py-3">
+      <div className="size-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+    </div>
+  )
+}
+
 export function MessageList({
   messages,
   userId,
+  onLoadMore,
+  hasMore,
+  loadingHistory,
 }: {
   messages: ChatMessage[]
   userId: string
+  onLoadMore: () => void
+  hasMore: boolean
+  loadingHistory: boolean
 }) {
   const renderItems = useMemo(() => buildRenderItems(messages), [messages])
+  const viewportRef = useRef<HTMLDivElement | null>(null)
+  const prevCountRef = useRef(messages.length)
+  const scrollSnapshotRef = useRef(0)
+
+  const handleScroll = useCallback(
+    (e: React.UIEvent<HTMLDivElement>) => {
+      const el = e.currentTarget
+      if (!hasMore || loadingHistory || el.scrollTop > 200) return
+      scrollSnapshotRef.current = el.scrollHeight
+      onLoadMore()
+    },
+    [hasMore, loadingHistory, onLoadMore],
+  )
+
+  useEffect(() => {
+    if (messages.length > prevCountRef.current && scrollSnapshotRef.current > 0) {
+      const el = viewportRef.current
+      if (el) {
+        el.scrollTop += el.scrollHeight - scrollSnapshotRef.current
+      }
+      scrollSnapshotRef.current = 0
+    }
+    prevCountRef.current = messages.length
+  }, [messages])
 
   return (
     <MessageScrollerProvider>
       <MessageScroller className="flex-1">
-        <MessageScrollerViewport>
+        <MessageScrollerViewport ref={viewportRef} onScroll={handleScroll}>
           <MessageScrollerContent className="gap-0 px-4 py-3">
+            {loadingHistory && <Loader />}
             {renderItems.map((item) => {
               if (item.type === 'separator') {
                 return <DateSeparator key={item.key} label={item.label} />
