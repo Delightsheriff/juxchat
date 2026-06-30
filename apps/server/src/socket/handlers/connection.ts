@@ -3,7 +3,6 @@ import type { Server } from 'socket.io'
 import type { FastifyBaseLogger } from 'fastify'
 import type { PrismaClient } from '@prisma/client'
 import { onDisconnect } from './disconnect.js'
-import { onRegister } from './register.js'
 import { onJoinConversation } from './join-conversation.js'
 import { onSendMessage } from './send-message.js'
 
@@ -21,9 +20,7 @@ export function onConnection(
 ) {
   socket.data.connectedAt = Date.now()
 
-  log.info({ socketId: socket.id }, 'client connected')
-
-  socket.on('register', (username: string) => onRegister(socket, log, prisma, username))
+  log.info({ socketId: socket.id, userId: socket.data.user?.id }, 'client connected')
 
   socket.on('join_conversation', (conversationId: string) => {
     onJoinConversation(socket, log, prisma, conversationId)

@@ -2,7 +2,6 @@ import type { Socket } from 'socket.io'
 import type { Server } from 'socket.io'
 import type { FastifyBaseLogger } from 'fastify'
 import type { PrismaClient } from '@prisma/client'
-import { socketUserMap } from '../store.js'
 import { sendMessage } from '../../modules/messages/message.service.js'
 
 /**
@@ -31,9 +30,9 @@ export async function onSendMessage(
     return { error: 'text must not be empty' }
   }
 
-  const userId = socketUserMap.get(socket.id)
+  const userId = socket.data.user?.id
   if (!userId) {
-    return { error: 'not registered' }
+    return { error: 'not authenticated' }
   }
 
   try {

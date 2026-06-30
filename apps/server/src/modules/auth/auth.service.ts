@@ -11,7 +11,7 @@ function getSecret(): string {
 }
 
 export interface JwtPayload {
-  userId: string
+  id: string
   username: string
 }
 
@@ -40,7 +40,7 @@ export async function register(
   })
 
   const token = jwt.sign(
-    { userId: user.id, username: user.username } satisfies JwtPayload,
+    { id: user.id, username: user.username } satisfies JwtPayload,
     getSecret(),
     { expiresIn: '7d' },
   )
@@ -72,7 +72,7 @@ export async function login(
   }
 
   const token = jwt.sign(
-    { userId: user.id, username: user.username } satisfies JwtPayload,
+    { id: user.id, username: user.username } satisfies JwtPayload,
     getSecret(),
     { expiresIn: '7d' },
   )

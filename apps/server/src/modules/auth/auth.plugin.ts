@@ -4,7 +4,7 @@ import { verifyToken } from './auth.service.js'
 
 declare module 'fastify' {
   interface FastifyRequest {
-    user: { userId: string; username: string }
+    user: { id: string; username: string }
   }
 }
 

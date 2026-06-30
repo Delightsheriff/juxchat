@@ -1,7 +1,6 @@
 import type { Socket } from 'socket.io'
 import type { FastifyBaseLogger } from 'fastify'
 import type { PrismaClient } from '@prisma/client'
-import { socketUserMap } from '../store.js'
 
 /**
  * Handles a client joining a conversation room.
@@ -23,9 +22,9 @@ export async function onJoinConversation(
     return
   }
 
-  const userId = socketUserMap.get(socket.id)
+  const userId = socket.data.user?.id
   if (!userId) {
-    socket.emit('join_conversation_error', { message: 'not registered' })
+    socket.emit('join_conversation_error', { message: 'not authenticated' })
     return
   }
 
