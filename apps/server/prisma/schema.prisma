@@ -10,11 +10,12 @@ generator client {
 // Keeping the model minimal avoids premature abstraction
 // and makes it easy to evolve as requirements solidify.
 model User {
-  id        String               @id @default(cuid())
-  username  String               @unique
-  createdAt DateTime             @default(now())
-  members   ConversationMember[]
-  messages  Message[]
+  id           String               @id @default(cuid())
+  username     String               @unique
+  passwordHash String?
+  createdAt    DateTime             @default(now())
+  members      ConversationMember[]
+  messages     Message[]
 }
 
 // A join table links users to conversations. Storing participant
